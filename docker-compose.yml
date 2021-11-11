@@ -1,0 +1,58 @@
+version: '3'
+services:
+  db:
+    container_name: postgres_hwi_container
+    image: postgres:alpine
+    network_mode: bridge
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5444:5432"
+    networks:
+      - hwiServer
+  pgadmin:
+    container_name: pgadmin_hwi_container
+    image: dpage/pgadmin4:snapshot
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "krlsedu@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "8089:80"
+    depends_on:
+      - db
+    networks:
+      - hwiServer
+  app:
+    container_name: hwi_server_container
+    image: krlsedu/hwi-server
+    network_mode: bridge
+    restart: always
+    ports:
+      - "8088:8080"
+    networks:
+      - hwiServer
+    entrypoint: "java -Djava.security.egd=file:/dev/./urandom -jar hwiServer.jar"
+    links:
+      - db
+    depends_on:
+      - db
+
+  grafanaHWI:
+    image: grafana/grafana:main-ubuntu
+    container_name: grafana_hwi
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - grafana-hwi:/var/lib/grafana
+    restart: unless-stopped
+networks:
+  hwiServer:
+    driver: bridge
+
+volumes:
+  grafana-hwi:
+    driver: local
